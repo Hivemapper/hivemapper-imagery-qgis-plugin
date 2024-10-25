@@ -1,11 +1,5 @@
 Plugin Builder Results
 
-Your plugin HivemapperImagery was created in:
-    /Users/jinglund/Downloads/hivemapper_imagery
-
-Your QGIS plugin directory is located at:
-    /Users/jinglund/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins
-
 What's Next:
 
   * Copy the entire directory containing your new plugin to the QGIS plugin
