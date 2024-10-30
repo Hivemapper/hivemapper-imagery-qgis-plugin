@@ -9,6 +9,9 @@ __revision__ = '$Format:%H$'
 
 import os
 import inspect
+import tempfile
+import json
+
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
@@ -16,6 +19,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterString,
                        QgsProcessingParameterFeatureSource,
                        QgsProcessingParameterFileDestination)
+from imagery import query
 
 
 class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
@@ -79,6 +83,8 @@ class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
         api_key = self.parameterAsString(parameters, self.API_KEY, context)
         username = self.parameterAsString(parameters, self.USERNAME, context)
 
+        authToken = "1234"#get_personal_token(api_key, username)
+
         fieldnames = [field.name() for field in source.fields()]
 
         # Compute the number of steps to display within the progress bar and
@@ -86,21 +92,35 @@ class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
         total = 100.0 / source.featureCount() if source.featureCount() else 0
         features = source.getFeatures()
 
-        with open(csv, 'w') as output_file:
-            # write header
-            line = ','.join(name for name in fieldnames) + '\n'
-            output_file.write(line)
-            for current, f in enumerate(features):
-                # Stop the algorithm if cancel button has been clicked
-                if feedback.isCanceled():
-                    break
+        # for each feature, query frames and download files
+        for current, feature in enumerate(features):
+            # Stop the algorithm if cancel button has been clicked
+            if feedback.isCanceled():
+                break
 
-                # Add a feature in the sink
-                line = ','.join(str(f[name]) for name in fieldnames) + '\n'
-                output_file.write(line)
+            # Update the progress bar
+            feedback.setProgress(int(current * total))
 
-                # Update the progress bar
-                feedback.setProgress(int(current * total))
+            # Get the geometry of the feature
+            geom = feature.geometry()
+
+            # Get the center of the geometry
+            center = geom.centroid().asPoint()
+            
+            # Create a temporary file for the GeoJSON data
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.geojson', delete=False) as temp_geojson_file:
+                # Write the GeoJSON data to the temporary file
+                json.dump(center, temp_geojson_file)
+                temp_geojson_file_path = temp_geojson_file.name
+                print(f"Temporary GeoJSON file created at: {temp_geojson_file_path}")
+
+                # make the API call to query available data
+                frames = query(file_path = temp_geojson_file_path, latest = True,  authorization = authToken, output_dir = csv)
+                
+                print('completed processing frames')
+                # # download the content into folders grouped by its session id
+                # download_files(frames, output_dir)
+
 
         return {self.OUTPUT: csv}
 

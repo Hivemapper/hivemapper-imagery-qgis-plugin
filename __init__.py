@@ -26,6 +26,16 @@ __author__ = 'Hivemapper'
 __date__ = '2024-10-24'
 __copyright__ = '(C) 2024 by Hivemapper'
 
+import subprocess
+import sys
+
+required_packages = ["hivemapper-python"] 
+
+for package in required_packages:
+    try:
+        import imagery
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
