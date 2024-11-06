@@ -60,20 +60,40 @@ class HivemapperImageryPlugin(object):
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
+        """ Add actions to the GUI for both algorithms """
         self.initProcessing()
 
-        icon = os.path.join(os.path.join(cmd_folder, 'logo.png'))
-        self.action = QAction(
-            QIcon(icon),
-            u"Fetch Imagery", self.iface.mainWindow())
-        self.action.triggered.connect(self.run)
-        self.iface.addPluginToMenu(u"&Hivemapper", self.action)
-        self.iface.addToolBarIcon(self.action)
+        # Define the icon for the toolbar
+        cmd_folder = os.path.dirname(__file__)
+        icon_path = os.path.join(cmd_folder, 'logo.png')
+        icon = QIcon(icon_path)
+
+        # Action for "Fetch Imagery" algorithm
+        self.fetch_imagery_action = QAction(icon, "Fetch Imagery", self.iface.mainWindow())
+        self.fetch_imagery_action.triggered.connect(self.runFetchImagery)
+        self.iface.addPluginToMenu("&Hivemapper", self.fetch_imagery_action)
+        self.iface.addToolBarIcon(self.fetch_imagery_action)
+
+        # Action for "Create Bursts" algorithm
+        self.create_bursts_action = QAction(icon, "Create Bursts", self.iface.mainWindow())
+        self.create_bursts_action.triggered.connect(self.runCreateBursts)
+        self.iface.addPluginToMenu("&Hivemapper", self.create_bursts_action)
+        self.iface.addToolBarIcon(self.create_bursts_action)
 
     def unload(self):
+        """ Remove actions and provider when the plugin is unloaded """
+        if self.fetch_imagery_action:
+            self.iface.removePluginMenu("&Hivemapper", self.fetch_imagery_action)
+            self.iface.removeToolBarIcon(self.fetch_imagery_action)
+        if self.create_bursts_action:
+            self.iface.removePluginMenu("&Hivemapper", self.create_bursts_action)
+            self.iface.removeToolBarIcon(self.create_bursts_action)
         QgsApplication.processingRegistry().removeProvider(self.provider)
-        self.iface.removePluginMenu(u"&Hivemapper", self.action)
-        self.iface.removeToolBarIcon(self.action)
 
-    def run(self):
-        processing.execAlgorithmDialog("Hivemapper:Fetch Imagery")
+    def runFetchImagery(self):
+        """ Run the Fetch Imagery algorithm """
+        self.iface.runAlgorithmDialog("Hivemapper:fetch_imagery")
+
+    def runCreateBursts(self):
+        """ Run the Create Bursts algorithm """
+        self.iface.runAlgorithmDialog("Hivemapper:create_bursts")

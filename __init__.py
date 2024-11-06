@@ -54,6 +54,7 @@ def classFactory(iface):  # pylint: disable=invalid-name
     pre_init_plugin()
 
     import imagery
+    import bursts
 
     from .hivemapper_imagery import HivemapperImageryPlugin
     return HivemapperImageryPlugin(iface)

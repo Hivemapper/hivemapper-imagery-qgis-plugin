@@ -12,6 +12,7 @@ import inspect
 from qgis.PyQt.QtGui import QIcon
 from qgis.core import QgsProcessingProvider
 from .hivemapper_imagery_algorithm import HivemapperImageryAlgorithm
+from .hivemapper_imagery_burst_algorithm import HivemapperImageryBurstAlgorithm
 
 
 class HivemapperImageryProvider(QgsProcessingProvider):
@@ -34,6 +35,7 @@ class HivemapperImageryProvider(QgsProcessingProvider):
         Loads all algorithms belonging to this provider.
         """
         self.addAlgorithm(HivemapperImageryAlgorithm())
+        self.addAlgorithm(HivemapperImageryBurstAlgorithm())
 
     def id(self):
         """
