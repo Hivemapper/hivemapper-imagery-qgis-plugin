@@ -26,16 +26,22 @@ __author__ = 'Hivemapper'
 __date__ = '2024-10-24'
 __copyright__ = '(C) 2024 by Hivemapper'
 
-import subprocess
+import os
+import site
+import pkg_resources
 import sys
 
-required_packages = ["hivemapper-python"] 
 
-for package in required_packages:
-    try:
-        import imagery
-    except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+def pre_init_plugin():
+    # Path to the extlib directory
+    extra_libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "extlib"))
+    if os.path.isdir(extra_libs_path):
+        # Insert extlib at the beginning of sys.path to prioritize it
+        sys.path.insert(0, extra_libs_path)
+        # Add extlib to site directories
+        site.addsitedir(extra_libs_path)
+        # Ensure pkg_resources can locate packages in extlib
+        pkg_resources.working_set.add_entry(extra_libs_path)
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
@@ -45,5 +51,9 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :type iface: QgsInterface
     """
     #
+    pre_init_plugin()
+
+    import imagery
+
     from .hivemapper_imagery import HivemapperImageryPlugin
     return HivemapperImageryPlugin(iface)

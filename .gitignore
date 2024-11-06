@@ -1,3 +1,6 @@
 env
-__pycache__
+*pycache
 *.pyc
+test.py
+.python-version
+extlib
