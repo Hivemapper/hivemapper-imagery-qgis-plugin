@@ -4,3 +4,5 @@ env
 test.py
 .python-version
 extlib*
+.DS_Store
+*config
