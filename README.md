@@ -35,6 +35,11 @@ The **Hivemapper Imagery** plugin enables QGIS users to fetch and create imagery
   
 ### Screenshot
 
+#### Fetch Hivemapper Imagery
+![Fetch Imagery](fetch_imagery.png)
+#### Show Imagery result (Hover over the point/polygon)
 ![Plugin Screenshot](plugin.png)
+#### Create Burst
+![Create Burst](create_burst.png)
 
 You're all set! The Hivemapper Imagery plugin should now be ready to use in QGIS, with full access to the imagery tools from the Processing Toolbox.
