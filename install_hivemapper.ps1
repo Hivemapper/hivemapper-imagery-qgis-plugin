@@ -6,7 +6,7 @@ Write-Host "Installing hivemapper-python to $TARGET_DIR without numpy and scipy.
 
 # Install hivemapper-python to the target directory
 # assume python version is correct >=3.9
-pip install hivemapper-python --target "$TARGET_DIR" --no-cache-dir
+pip install hivemapper-python --target "$TARGET_DIR" --no-cache-dir --no-user
 
 # Check if installation succeeded
 if ($LASTEXITCODE -eq 0) {
