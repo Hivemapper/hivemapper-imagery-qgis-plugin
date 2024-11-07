@@ -8,10 +8,19 @@ The **Hivemapper Imagery** plugin enables QGIS users to fetch and create imagery
    Clone or download the repository to your local machine.
 
 2. **Run the Installation Script**  
+   For MAC/LINUX users
    In the repository directory, set executable permissions for the installation script and run it:
    ```bash
    chmod +x install_hivemapper.sh
    ./install_hivemapper.sh
+   ```
+
+   For Windows users
+   Open power shell and set execution permissions
+   ```bash
+   Get-ExecutionPolicy
+   set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+   .\install_hivemapper.ps1
    ```
    The script will install required dependencies to the `extlib` directory.
 
