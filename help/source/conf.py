@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'HivemapperImagery'
-copyright = u'2013, Hivemapper Inc.'
+copyright = u'2024, Hivemapper'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -179,7 +179,7 @@ htmlhelp_basename = 'TemplateClassdoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'HivemapperImagery.tex', u'HivemapperImagery Documentation',
-   u'Hivemapper Inc.', 'manual'),
+   u'Hivemapper', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -212,5 +212,5 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'TemplateClass', u'HivemapperImagery Documentation',
-     [u'Hivemapper Inc.'], 1)
+     [u'Hivemapper'], 1)
 ]

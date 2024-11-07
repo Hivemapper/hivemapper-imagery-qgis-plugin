@@ -5,12 +5,12 @@
 [general]
 name=Hivemapper Imagery
 qgisMinimumVersion=3.0
-description=Access to hivemapper network imagery
+description=This plugin fetches the latest imagery from the Hivemapper network
 version=0.1
-author=Hivemapper Inc.
+author=Hivemapper
 email=hi@hivemapper.com
 
-about=The Hivemapper Map Image API enabling individuals and organizations to use images from the decentralized map. Anyone who wants to review imagery from areas that have been mapped must purchase map credits to access the Map Image API. This Imagery API plugin provides functionalities to access imagery from geometry selection
+about=Fresh, geolocated street-level imagery from around the globe The Map Image API is the Hivemapper Network’s first API enabling individuals and organizations to use images from the decentralized map. To get an account and api key, follow the documentation: https://docs.hivemapper.com/use-map-data/map-image-api
 
 tracker=http://bugs
 repository=http://repo
@@ -29,7 +29,7 @@ homepage=http://homepage
 category=Analysis
 icon=icon.png
 # experimental flag
-experimental=False
+experimental=True
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
@@ -44,7 +44,4 @@ Category of the plugin: Raster, Vector, Database or Web
 
 # If the plugin can run on QGIS Server.
 server=False
-
-[python]
-packages=hivemapper-python
 

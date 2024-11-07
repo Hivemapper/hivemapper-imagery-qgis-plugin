@@ -12,7 +12,7 @@ import inspect
 import tempfile
 import json
 import glob
-import imagery
+import bursts
 import base64
 
 from qgis.PyQt.QtGui import QIcon
@@ -51,103 +51,16 @@ def get_personal_token(user_name, api_key):
     encoded_string = encoded_bytes.decode("utf-8")
     return encoded_string
 
-def generate_image_list_html(image_metadata):
-    """
-    Generates HTML for displaying images with titles in a scrollable list.
-    
-    :param image_metadata: List of dictionaries containing 'image_path' and 'title' keys.
-                           Example: [{'image_path': '/path/to/image1.jpg', 'title': 'Image Title 1'}, ...]
-    :return: HTML string
-    """
-    html_content = '''
-    <div class="image-list">
-    '''
 
-    # Generate each image item in the list
-    for item in image_metadata:
-        html_content += f'''
-        <div class="image-item">
-            <p>{item['timestamp']}</p>
-            <a href="file:///{item['image_path']}" target="_blank">
-                <img src="file:///{item['image_path']}" alt="{item['image_path']}">
-            </a>
-        </div>
-        '''
-
-    # Close the image list container div and add CSS styling
-    html_content += '''
-    </div>
-
-    <style>
-        .image-list {
-        max-width: 480px;
-        max-height: 480px;
-        overflow-y: auto;
-    }
-
-        .image-item img {
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        .image-item p {
-            font-weight: bold;
-            margin: 0 0 5px;
-            color: white;
-        }
-    </style>
-    '''
-    
-    return html_content
-
-def extract_unique_sequences(paths):
-    unique_paths = set()
-    for path in paths:
-        # Check if the file ends with .jpg
-        if path.endswith('.jpg'):
-            # Get the path before 'keyframes'
-            path_before_keyframes = os.path.dirname(os.path.dirname(path))
-            unique_paths.add(path_before_keyframes)
-    return unique_paths
-
-def filter_imagery_paths(image_paths):
-    result = []
-    # Filter out paths that end with ".jpg"
-    jpg_paths = [path for path in image_paths if path.endswith(".jpg")]
-     # Get the parent directory of "keyframes"
-    dir = extract_unique_sequences(jpg_paths)
-    # for each dir, get all the metadata files and output the image_path and timestamp
-    for d in dir:
-        metadata_files = glob.glob(os.path.join(d, "metadata", "*.json"))
-        for metadata_file in metadata_files:
-            with open(metadata_file, 'r') as json_file:
-                metadata = json.load(json_file)
-                position = metadata.get("position", {})
-                lat = position.get("lat")
-                lon = position.get("lon")
-                # Skip if lat/lon is missing
-                if lat is None or lon is None:
-                    continue
-                # Get the imagery path
-                image_idx = metadata['idx'] 
-                image_path = os.path.join(d, "keyframes", f"{image_idx}.jpg")
-                result.append({
-                    "image_path": image_path,
-                    "timestamp": metadata.get("timestamp"),
-                    "sequence": metadata.get("sequence"),
-                    "lat": lat,
-                    "lon": lon,
-                })
-    return result
-class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
+class HivemapperImageryBurstAlgorithm(QgsProcessingAlgorithm):
     # Constants used to refer to parameters and outputs. They will be
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    OUTPUT = 'OUTPUT'
     INPUT = 'INPUT'
     API_KEY = 'API_KEY'
     USERNAME = 'USERNAME'
+    OUTPUT = 'OUTPUT'
 
     def initAlgorithm(self, config):
         """
@@ -163,14 +76,6 @@ class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
                 self.INPUT,
                 self.tr('Input layer'),
                 [QgsProcessing.TypeVectorAnyGeometry]
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterFolderDestination(
-                self.OUTPUT,
-                self.tr('Output Directory'),
-                defaultValue=config.get("output", "output")
             )
         )
 
@@ -191,7 +96,13 @@ class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
                 defaultValue=config.get("username", "")
             )
         )
- 
+        self.addParameter(
+                QgsProcessingParameterString(
+                    self.OUTPUT,
+                    self.tr('Result Message'),
+                    defaultValue="Process complete"  # Optional default message
+                )
+            )
 
     def processAlgorithm(self, parameters, context, feedback):
         """
@@ -202,13 +113,11 @@ class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
         api_key = self.parameterAsString(parameters, self.API_KEY, context)
         username = self.parameterAsString(parameters, self.USERNAME, context)
         layer = self.parameterAsVectorLayer(parameters, self.INPUT, context)
-        output = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
-        # Save values to config file
-        config = {
-            "api_key": api_key,
-            "username": username,
-            "output": output
-        }
+        config = load_config()  # Load saved config
+
+        # Save values to config dictionary
+        config['api_key'] = api_key
+        config['username'] = username
         save_config(config)
 
         # Get the authorization token
@@ -218,37 +127,27 @@ class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
         if not layer:
             raise ValueError("Input layer is not valid")
 
-        # Ensure layer is editable
         layer.startEditing()
         layer_provider = layer.dataProvider()
 
         # Add the 'imagery_metadata' field if it doesn't exist and commit immediately
-        if layer_provider.fields().indexFromName("imagery_metadata") == -1:
-            layer_provider.addAttributes([QgsField("imagery_metadata", QVariant.String)])
+        if layer_provider.fields().indexFromName("burst_metadata") == -1:
+            layer_provider.addAttributes([QgsField("burst_metadata", QVariant.String)])
             layer.updateFields()  # Refresh the layer fields to include the new field
             layer.commitChanges()  # Commit changes after adding the field
             layer.startEditing()  # Reopen editing session
 
         # Verify field addition
         layer.updateFields()
-        imagery_metadata_index = layer.fields().indexFromName("imagery_metadata")
-        if imagery_metadata_index == -1:
-            raise ValueError("Field 'imagery_metadata' was not added successfully")
-
-        imagery_metadata_index = layer.fields().indexFromName("imagery_metadata")
-        if imagery_metadata_index == -1:
-            raise ValueError("Field 'imagery_metadata' was not added successfully")
-
         # Only process selected features
         selected_features = layer.selectedFeatures()
         if not selected_features:
             raise ValueError("No features selected")
         total = 100.0 / len(selected_features) if selected_features else 0
 
+        success = 0
         # for each feature, query frames and download files
         for current, feature in enumerate(selected_features):
-            # to store imagery metadata in a list
-            metadata_list = []
 
             # Stop the algorithm if cancel button has been clicked
             if feedback.isCanceled():
@@ -269,22 +168,20 @@ class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
                 temp_geojson_file.flush()  # Ensure all data is written to the file
                 temp_geojson_file_path = temp_geojson_file.name
                 print(f"Temporary GeoJSON file created at: {temp_geojson_file_path}")
-            frames = imagery.query(file_path=temp_geojson_file_path, output_dir=output, authorization = authToken, latest=True, start_day=None, end_day=None, use_cache=False)
-            # get result frames and get filtered imagery paths
-            results = filter_imagery_paths(frames)
-            for result in results:
-                metadata_list.append(result)
-
-            # Sort the metadata list by timestamp in descending order       
-            sorted_metadata = sorted(metadata_list, key=lambda x: x['timestamp'], reverse=True)
-            html = generate_image_list_html(sorted_metadata)
-            feature.setAttribute(imagery_metadata_index, html)
-            layer.updateFeature(feature)
-
-        layer.setMapTipTemplate("[% imagery_metadata %]")
+            result = bursts.create_bursts(geojson_file_path=temp_geojson_file_path, authorization = 'Basic '+authToken)
+            # add attribute to feature 'burst_metadata'
+            if isinstance(result, dict) and result.get('success'):
+                success += 1
+                # Convert the result data to JSON string and update feature
+                json_string = json.dumps(result.get('bursts', []))
+                feature.setAttribute('burst_metadata', json_string)
+                layer.updateFeature(feature)
+            else:
+                print("Failed to create burst for feature")
         layer.commitChanges()
+        feedback.pushInfo(f"Successfully created {success} burst(s)" if success > 0 else "Error processing features to create bursts")
 
-        return {self.OUTPUT: output}
+        return {self.OUTPUT: f"Successfully created {success} burst(s)" if success > 0 else "Error processing features to create bursts"}
 
     def name(self):
         """
@@ -294,7 +191,7 @@ class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'Fetch Imagery'
+        return 'Create Bursts'
 
     def displayName(self):
         """
@@ -324,4 +221,4 @@ class HivemapperImageryAlgorithm(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return HivemapperImageryAlgorithm()
+        return HivemapperImageryBurstAlgorithm()

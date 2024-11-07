@@ -1,11 +1,11 @@
 #/***************************************************************************
 # HivemapperImagery
 #
-# Access to hivemapper network imagery
+# This plugin fetches the latest imagery from the Hivemapper network
 #							 -------------------
-#		begin				: 2024-10-22
+#		begin				: 2024-10-24
 #		git sha				: $Format:%H$
-#		copyright			: (C) 2024 by Hivemapper Inc.
+#		copyright			: (C) 2024 by Hivemapper
 #		email				: hi@hivemapper.com
 # ***************************************************************************/
 #
@@ -40,7 +40,7 @@ SOURCES = \
 	__init__.py \
 	hivemapper_imagery.py 
 
-PLUGINNAME = hivemapper_imagery
+PLUGINNAME = plugin-hivemapper
 
 PY_FILES = \
 	__init__.py \
@@ -65,7 +65,7 @@ PEP8EXCLUDE=pydev,resources.py,conf.py,third_party,ui
 #	* Windows:
 #	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins'
 
-QGISDIR=/Users/jinglund/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins
+QGISDIR=/Users/$(User)/Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins
 
 #################################################
 # Normally you would not need to edit below here
